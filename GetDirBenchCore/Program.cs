@@ -14,51 +14,37 @@ namespace GetDirBench
 {
     public class WindowsCheck
     {
-        static string fullPath = @"C:\src\msbuild-working\msbuild\src\Build\BackEnd\Components\RequestBuilder\TargetUpToDateChecker.cs";
-
+        static string dir = @"C:\Users\chcasta\Documents\test";
+        static string[] paths = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9", "test10" };
+[Benchmark]
+        public void Single()
+        {
+            GetLowestSingle(dir, paths);
+        }
         [Benchmark]
-        public void GetLastWriteTimeManaged()
+        public void Multiple()
         {
-            File.GetLastWriteTimeUtc(fullPath);
+            GetLowestMultiple(dir);
         }
 
-        [Benchmark]
-        public void GetLastWriteTimeNative()
+        internal static void GetLowestSingle(string directory, string[] paths)
         {
-            WIN32_FILE_ATTRIBUTE_DATA data = new WIN32_FILE_ATTRIBUTE_DATA();
-            bool success = false;
-
-            success = GetFileAttributesEx(fullPath, 0, ref data);
+            foreach (string path in paths)
+            {
+                string fullPath = Path.Combine(directory, path);
+                File.GetLastWriteTimeUtc(fullPath);
+            }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct WIN32_FILE_ATTRIBUTE_DATA
+        internal static void GetLowestMultiple(string directory)
         {
-            internal int fileAttributes;
-            internal uint ftCreationTimeLow;
-            internal uint ftCreationTimeHigh;
-            internal uint ftLastAccessTimeLow;
-            internal uint ftLastAccessTimeHigh;
-            internal uint ftLastWriteTimeLow;
-            internal uint ftLastWriteTimeHigh;
-            internal uint fileSizeHigh;
-            internal uint fileSizeLow;
+            var dir = new DirectoryInfo(directory);
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                var c = file.LastWriteTimeUtc;
+            }
         }
 
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool GetFileTime(
-            SafeFileHandle hFile,
-            out FILETIME lpCreationTime,
-            out FILETIME lpLastAccessTime,
-            out FILETIME lpLastWriteTime
-            );
-
-
-        [SuppressUnmanagedCodeSecurity]
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool GetFileAttributesEx(String name, int fileInfoLevel, ref WIN32_FILE_ATTRIBUTE_DATA lpFileInformation);
     }
     class Program
     {
